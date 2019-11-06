@@ -1,0 +1,147 @@
+global TestCasesROM {          // this is a global lookup table for all test cases which will be used by the ALU tester
+  const ADDER_TEST_NAME        = $reverse({"ADD1", "ADD2", "ADD3", "ADD4", "ADD5", "SUB1", "SUB2", "SUB3",
+                                           "SUB4", "SUB5", "NNUL"});
+  const ADDER_TEST_A           = $reverse({b0000000000000001, b1111111111111111, b0000000100000010, b1000000000000000,
+                                           b0100000000000000, b0000000000000001, b1111111111111111, b0000110110101100,
+                                           b0100111000100000, b1000101011010000, b0000010000011010});
+  const ADDER_TEST_B           = $reverse({b0000000000000001, b1111111111111111, b1111111011010101, b1000000000000000,
+                                           b0100000000000000, b0000000000000001, b1111111111111111, b1111011000101000,
+                                           b1100010101101000, b0001001110001000, b0000011111010000});
+  const ADDER_TEST_ALUFN       = $reverse({b000000, b000000, b000000, b000000, b000000, b000001, b000001, b000001,
+                                           b000001, b000001, b000010});
+  const ADDER_TEST_C           = $reverse({b0000000000000010, b1111111111111110, b1111111111010111, b0000000000000000,
+                                           b1000000000000000, b0000000000000000, b0000000000000000, b0001011110000100,
+                                           b1000100010111000, b0111011101001000, b0000101100100000});
+  const ADDER_TEST_Z           = $reverse({b0, b0, b0, b1, b0, b1, b1, b0, b0, b0, b0});
+  const ADDER_TEST_V           = $reverse({b0, b0, b0, b1, b1, b0, b0, b0, b1, b1, b0});
+  const ADDER_TEST_N           = $reverse({b0, b1, b1, b0, b1, b0, b0, b0, b1, b0, b0});
+  const ADDER_FAIL_NAME        = $reverse({"ADD1", "ADD2", "SUB1", "SUB2", "NNUL"});
+  const ADDER_FAIL_A           = $reverse({b0000000000000001, b1111111111111111, b0000000000000001, b1111111111111111,
+                                           b0000010000011010});
+  const ADDER_FAIL_B           = $reverse({b0000000000000001, b1111111111111111, b0000000000000001, b1111111111111111,
+                                           b0000011111010000});
+  const ADDER_FAIL_ALUFN       = $reverse({b010000, b000000, b000001, b000001, b000010});
+  const ADDER_FAIL_C           = $reverse({b0000000000000010, b1111111111111110, b0000000000000000, b0000000000000000,
+                                           b0000101100100001});
+  const ADDER_FAIL_Z           = $reverse({b0, b0, b1, b0, b0});
+  const ADDER_FAIL_V           = $reverse({b0, b0, b1, b0, b0});
+  const ADDER_FAIL_N           = $reverse({b0, b0, b0, b0, b0});
+  const ADDER_INVALID_ALUFN    = $reverse({b010000});
+   // the arrays are reversed as Lucid reads arrays from right to left, which is opposite of how we designed the test cases
+  
+  const COMPARE_TEST_NAME      = $reverse({" EQ1", " EQ2", " EQ3", " EQ4", " EQ5", " EQ6", " LT1", " LT2",
+                                           " LT3", " LT4", " LT5", " LE1", " LE2", " LE3", " LE4", " LE5"});
+  const COMPARE_TEST_A         = $reverse({b0000000000001011, b0000000000011111, b0000000000000000, b1111111111111111,
+                                           b0000000000001011, b0000000000000001, b0000000000001011, b0000000000011111,
+                                           b0000000000000000, b1111111111111111, b0000000000001011, b0000000000001011,
+                                           b0000000000011111, b0000000000000000, b1111111111111111, b0000000000001011});
+  const COMPARE_TEST_B         = $reverse({b0000000000011111, b0000000000001011, b0000000000000000, b1111111111111111,
+                                           b0000000000001011, b0000000000000001, b0000000000011111, b0000000000001011,
+                                           b0000000000000000, b1111111111111111, b0000000000001011, b0000000000011111,
+                                           b0000000000001011, b0000000000000000, b1111111111111111, b0000000000001011});
+  const COMPARE_TEST_ALUFN     = $reverse({b110011, b110011, b110011, b110011, b110011, b110011, b110101, b110101,
+                                           b110101, b110101, b110101, b110111, b110111, b110111, b110111, b110111});
+  const COMPARE_TEST_C         = $reverse({b0000000000000000, b0000000000000000, b0000000000000001, b0000000000000001,
+                                           b0000000000000001, b0000000000000001, b0000000000000001, b0000000000000000,
+                                           b0000000000000000, b0000000000000000, b0000000000000000, b0000000000000001,
+                                           b0000000000000000, b0000000000000001, b0000000000000001, b0000000000000001});
+  const COMPARE_TEST_Z         = $reverse({b0, b0, b1, b1, b1, b1, b0, b0, b1, b1, b1, b0, b0, b1, b1, b1});
+  const COMPARE_TEST_V         = $reverse({b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0});
+  const COMPARE_TEST_N         = $reverse({b1, b0, b0, b0, b0, b0, b1, b0, b0, b0, b0, b1, b0, b0, b0, b0});
+  const COMPARE_FAIL_NAME      = $reverse({" EQ1", " EQ2", " LT1", " LT2", " LE1"});
+  const COMPARE_FAIL_A         = $reverse({b0000000000001011, b0000000000011111, b0000000000001011, b0000000000011111,
+                                           b0000000000001011});  
+  const COMPARE_FAIL_B         = $reverse({b0000000000011111, b0000000000001011, b0000000000011111, b0000000000001011,
+                                           b0000000000011111});
+  const COMPARE_FAIL_ALUFN     = $reverse({b110010, b110011, b110101, b110101, b110111});
+  const COMPARE_FAIL_C         = $reverse({b0000000000000000, b0000000000000000, b0000000000000001, b0000000000000000,
+                                           b0000000000000000});
+  const COMPARE_FAIL_Z         = $reverse({b0, b0, b0, b1, b0});
+  const COMPARE_FAIL_V         = $reverse({b0, b0, b1, b0, b0});
+  const COMPARE_FAIL_N         = $reverse({b1, b1, b1, b0, b1});
+  const COMPARE_INVALID_ALUFN  = $reverse({b110000, b110010, b110100, b110110, b111000, b111010, b111100, b111110,
+                                           b110001, b111001});
+  
+  
+  const BOOLEAN_TEST_NAME      = $reverse({"AND1", "AND2", " OR1", " OR2", "XOR1", "XOR2", "  A1", "  A2",
+                                           "   B", " NOR", "NAND"});
+  const BOOLEAN_TEST_A         = $reverse({b0100011110001001, b1111111111111111, b1000100010000000, b1111111111111111,
+                                           b1001101000100110, b1101010100100100, b1001100110011001, b0000000100000001,
+                                           b0000000100000001, b0101010100100100, b0000000000000001});
+  const BOOLEAN_TEST_B         = $reverse({b0001101000001110, b0000000000001010, b1001100101001001, b0010000000001010,
+                                           b1000000000001000, b1111111111100111, b0000000000001000, b0111001110010111,
+                                           b0111001110010111, b0010000000001010, b0000000000000011});
+  const BOOLEAN_TEST_ALUFN     = $reverse({b011000, b011000, b011110, b011110, b010110, b010110, b011010, b011010,
+                                           b011100, b010001, b010111});
+  const BOOLEAN_TEST_C         = $reverse({b0000001000001000, b0000000000001010, b1001100111001001, b1111111111111111,
+                                           b0001101000101110, b0010101011000011, b1001100110011001, b0000000100000001,
+                                           b0111001110010111, b1000101011010001, b1111111111111110});
+  const BOOLEAN_TEST_Z         = $reverse({b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b0});
+  const BOOLEAN_TEST_V         = $reverse({b0, b0, b1, b0, b0, b1, b0, b0, b0, b0, b0});
+  const BOOLEAN_TEST_N         = $reverse({b0, b0, b0, b1, b1, b0, b1, b0, b0, b0, b0});
+  const BOOLEAN_FAIL_NAME      = $reverse({"AND1", " OR1", " OR2", "XOR2", "  A2"});
+  const BOOLEAN_FAIL_A         = $reverse({b0100011110001001, b1000100010000000, b1111111111111111, b1101010100100100,
+                                           b0000000100000001});
+  const BOOLEAN_FAIL_B         = $reverse({b0001101000001110, b1001100101001001, b0010000000001010, b1111111111100111,
+                                           b0111001110010111});
+  const BOOLEAN_FAIL_ALUFN     = $reverse({b011001, b011110, b011110, b010110, b011010});
+  const BOOLEAN_FAIL_C         = $reverse({b0000001000001000, b1001100111001001, b1111111111111111, b0010101011000011,
+                                           b0000000100000000});
+  const BOOLEAN_FAIL_Z         = $reverse({b0, b0, b0, b1, b0});
+  const BOOLEAN_FAIL_V         = $reverse({b0, b1, b1, b1, b0});
+  const BOOLEAN_FAIL_N         = $reverse({b0, b1, b1, b0, b0});
+  const BOOLEAN_INVALID_ALUFN  = $reverse({b010000, b010001, b010010, b010011, b010101, b011001, b011100, b011011,
+                                           b011101, b010111, b011111});
+  
+  
+  const SHIFTER_TEST_NAME      = $reverse({"SHL1", "SHL2", "SHL3", "SHL4", "SHL5", "SHR1", "SHR2", "SHR3",
+                                           "SHR4", "SHR5", "SRA1", "SRA2", "SRA3", "SRA4", "SRA5", "SRA6"});
+  const SHIFTER_TEST_A         = $reverse({b0000000000000001, b0000000000000001, b1111111111111111, b1001100110011001,
+                                           b1000100010000000, b1000000000000000, b1000000000000000, b1111111111111111,
+                                           b1001100110011001, b0000000100010001, b1000000000000000, b0100000000000000,
+                                           b1111111111111111, b1001100110011001, b0000000100010001, b0111111111111111});
+  const SHIFTER_TEST_B         = $reverse({b0000000000000001, b0000000000001111, b0000000000001010, b0000000000001000,
+                                           b0000000000001001, b0000000000000001, b0000000000001111, b0000000000001010,
+                                           b0000000000001000, b0000000000001001, b0000000000000001, b0000000000001110,
+                                           b0000000000001010, b0000000000001000, b0000000000001001, b0000000000000111});
+  const SHIFTER_TEST_ALUFN     = $reverse({b100000, b100000, b100000, b100000, b100000, b100001, b100001, b100001,
+                                           b100001, b100001, b100011, b100011, b100011, b100011, b100011, b100011});
+  const SHIFTER_TEST_C         = $reverse({b0000000000000010, b1000000000000000, b1111110000000000, b1001100100000000,
+                                           b0000000000000000, b0100000000000000, b0000000000000001, b0000000000111111,
+                                           b0000000010011001, b0000000000000000, b1100000000000000, b0000000000000001,
+                                           b1111111111111111, b1111111110011001, b0000000000000000, b0000000011111111});
+  const SHIFTER_TEST_Z         = $reverse({b0, b0, b0, b0, b0, b0, b0, b0, b0, b0, b1, b1, b1, b1, b1, b1});
+  const SHIFTER_TEST_V         = $reverse({b0, b0, b0, b0, b0, b1, b1, b0, b0, b0, b1, b0, b1, b1, b0, b0});
+  const SHIFTER_TEST_N         = $reverse({b0, b0, b0, b1, b1, b0, b0, b1, b1, b0, b0, b0, b0, b0, b0, b0});
+  const SHIFTER_FAIL_NAME      = $reverse({"SHL1", "SHL2", "SHR1", "SHR2", "SRA1"});
+  const SHIFTER_FAIL_A         = $reverse({b0000000000000001, b0000000000000001, b1000000000000000, b1000000000000000,
+                                           b1000000000000000});
+  const SHIFTER_FAIL_B         = $reverse({b0000000000000001, b0000000000001111, b0000000000000001, b0000000000001111,
+                                           b0000000000000001});
+  const SHIFTER_FAIL_ALUFN     = $reverse({b100010, b100000, b100001, b100001, b100011});
+  const SHIFTER_FAIL_C         = $reverse({b0000000000000010, b1000000000000000, b0100000000000000, b0000000000000001,
+                                           b1100000000000001});
+  const SHIFTER_FAIL_Z         = $reverse({b0, b0, b0, b1, b1});
+  const SHIFTER_FAIL_V         = $reverse({b0, b0, b0, b1, b1});
+  const SHIFTER_FAIL_N         = $reverse({b0, b1, b0, b0, b0});
+  const SHIFTER_INVALID_ALUFN  = $reverse({b100010, b100110, b101010, b101110});
+  
+    // ALU test cases is simply the concatenation of all the test cases of the 4 sub-modules, and they should still work.
+  const ALU_TEST_NAME          = c{SHIFTER_TEST_NAME, BOOLEAN_TEST_NAME, COMPARE_TEST_NAME, ADDER_TEST_NAME};
+  const ALU_TEST_A             = c{SHIFTER_TEST_A, BOOLEAN_TEST_A, COMPARE_TEST_A, ADDER_TEST_A};
+  const ALU_TEST_B             = c{SHIFTER_TEST_B, BOOLEAN_TEST_B, COMPARE_TEST_B, ADDER_TEST_B};
+  const ALU_TEST_ALUFN         = c{SHIFTER_TEST_ALUFN, BOOLEAN_TEST_ALUFN, COMPARE_TEST_ALUFN, ADDER_TEST_ALUFN};
+  const ALU_TEST_C             = c{SHIFTER_TEST_C, BOOLEAN_TEST_C, COMPARE_TEST_C, ADDER_TEST_C};
+  const ALU_TEST_Z             = c{SHIFTER_TEST_Z, BOOLEAN_TEST_Z, COMPARE_TEST_Z, ADDER_TEST_Z};
+  const ALU_TEST_V             = c{SHIFTER_TEST_V, BOOLEAN_TEST_V, COMPARE_TEST_V, ADDER_TEST_V};
+  const ALU_TEST_N             = c{SHIFTER_TEST_N, BOOLEAN_TEST_N, COMPARE_TEST_N, ADDER_TEST_N};
+  const ALU_FAIL_NAME          = c{SHIFTER_FAIL_NAME, BOOLEAN_FAIL_NAME, COMPARE_FAIL_NAME, ADDER_FAIL_NAME};
+  const ALU_FAIL_A             = c{SHIFTER_FAIL_A, BOOLEAN_FAIL_A, COMPARE_FAIL_A, ADDER_FAIL_A};
+  const ALU_FAIL_B             = c{SHIFTER_FAIL_B, BOOLEAN_FAIL_B, COMPARE_FAIL_B, ADDER_FAIL_B};
+  const ALU_FAIL_ALUFN         = c{SHIFTER_FAIL_ALUFN, BOOLEAN_FAIL_ALUFN, COMPARE_FAIL_ALUFN, ADDER_FAIL_ALUFN};
+  const ALU_FAIL_C             = c{SHIFTER_FAIL_C, BOOLEAN_FAIL_C, COMPARE_FAIL_C, ADDER_FAIL_C};
+  const ALU_FAIL_Z             = c{SHIFTER_FAIL_Z, BOOLEAN_FAIL_Z, COMPARE_FAIL_Z, ADDER_FAIL_Z};
+  const ALU_FAIL_V             = c{SHIFTER_FAIL_V, BOOLEAN_FAIL_V, COMPARE_FAIL_V, ADDER_FAIL_V};
+  const ALU_FAIL_N             = c{SHIFTER_FAIL_N, BOOLEAN_FAIL_N, COMPARE_FAIL_N, ADDER_FAIL_N};  
+  const ALU_INVALID_ALUFN      = c{SHIFTER_INVALID_ALUFN, BOOLEAN_INVALID_ALUFN, COMPARE_INVALID_ALUFN, ADDER_INVALID_ALUFN};
+}

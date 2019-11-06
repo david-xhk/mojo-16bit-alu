@@ -1,0 +1,23 @@
+module multi_seven_seg (   // display a 4-letter word on the 7-segment display
+    input clk,
+    input rst,
+    input word[4][8],
+    output io_seg[8],      // 7-segment LEDs on IO Shield
+    output io_sel[4]       // Digit select on IO Shield
+  ) {
+  
+  seven_seg_lut seven_seg_lut;      // instantiate the lookup table for the 7-segment display
+  decoder num_to_seg(#WIDTH(2));    // decoder to allow a number to be translated to one-hot encoding (i.e. 0 -> 0001, 1 -> 0010, 2 -> 0100, etc.)
+  
+  .clk(clk), .rst(rst) {
+      counter seg_ctr (#DIV(16), #SIZE(2), #TOP(3));    // counter to alternate between which segment is displayed, which increases every 16th divisions of MOJO's 50Mhz CLK
+  }
+  
+  always {
+    num_to_seg.in = seg_ctr.value;              // decode the count being stored (0-3)
+    io_sel = ~num_to_seg.out;                   // the one-hot output such as 0010 or 1000 will select for which 7-segment to activate in this clock cycle
+
+    seven_seg_lut.char = word[seg_ctr.value];   // get the 7-segment bit representation for the corresponding letter of the word
+    io_seg = ~seven_seg_lut.segs;               // display the letter on the selected 7-segment
+  }
+}

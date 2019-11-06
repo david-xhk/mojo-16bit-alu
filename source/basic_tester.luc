@@ -1,0 +1,131 @@
+module basic_tester #(
+    NUM_TEST_CASES         = 1            : NUM_TEST_CASES > 0,                                       // number of test cases
+    TEST_NAME              = {"NULL"}     : (TEST_NAME.WIDTH[0] > 0) & (TEST_NAME[0].WIDTH[0] == 4),  // the names of the test cases
+    TEST_A                 = {16b0}       : (TEST_A.WIDTH[0] > 0) & (TEST_A[0].WIDTH == 16),          // 16-bit values for A input of the test cases
+    TEST_B                 = {16b0}       : (TEST_B.WIDTH[0] > 0) & (TEST_B[0].WIDTH == 16),          // 16-bit values for B input of the test cases
+    TEST_ALUFN             = {6b0}        : (TEST_ALUFN.WIDTH[0] > 0) & (TEST_ALUFN[0].WIDTH == 6),   // 6-bit values for ALUFN input of the test cases
+    TEST_C                 = {16b0}       : (TEST_C.WIDTH[0] > 0) & (TEST_C[0].WIDTH == 16),          // 16-bit values for the expected C output of the test cases
+    BYPASS_FAIL            = 0            : (BYPASS_FAIL == 0) | (BYPASS_FAIL == 1),                  // if set to 1, when a test case fails, the ALU will continue to the next test case after blinking the error 
+    NUM_TEST_SECS          = 3            : NUM_TEST_SECS > 0,                                        // the number of seconds to show each test case
+    NUM_FAIL_SECS          = 1            : NUM_FAIL_SECS > 0,                                        // the number of seconds to show an error
+    NUM_FAIL_BLINKS        = 2            : NUM_FAIL_BLINKS > 0                                       // the number of times to blink an error
+  )( 
+    input clk,              // clk
+    input rst,              // rst
+    input start,            // start signal to initiate the test sequence
+    input test_c[16],       // the 16-bit output from the module that is being tested
+    output test_a[16],      // the 16-bit value for A input to the module being tested
+    output test_b[16],      // the 16-bit value for B input to the module being tested
+    output test_alufn[6],   // the 6-bit value for ALUFN input to the module being tested
+    output state[2],        // FSM state bits reflecting the internal state of the tester
+    output status[4][8]     // status is a 4-letter word which will be displayed on the 7-segment display
+  ) {  
+  
+  const NUM_TEST_TIMER_CYCLES = NUM_TEST_SECS*50*$pow(10,6);  // calculate the number of CLK cycles needed to count in order to achieve required NUM_TEST_SECS
+  
+  const NUM_FAIL_TIMER_CYCLES = NUM_FAIL_SECS*50*$pow(10,6);  // calculate the number of CLK cycles needed to count in order to achieve required NUM_FAIL_SECS
+  
+  sig next_status[4][8];  // signal allowing for read/write of the next status to output
+
+  .clk(clk), .rst(rst) {
+    dff display_test_timer[$clog2(NUM_TEST_TIMER_CYCLES)](#INIT(0));  // dff to count the number of CLK cycles elapsed when displaying a test
+    dff display_fail_timer[$clog2(NUM_FAIL_TIMER_CYCLES)](#INIT(0));  // dff to count the number of CLK cycles elapsed when displaying an error
+    dff fail_blink_ctr[$clog2(NUM_FAIL_BLINKS)+1](#INIT(0));          // dff to track how many times an error has been blinked
+    dff tester_ctr[$clog2(NUM_TEST_CASES)](#INIT(0));                 // dff to store an index to which test case is currently being tested
+    fsm tester_state = {IDLE, TEST, FAIL, DONE};                      // fsm defining the internal state of the tester
+  }
+  
+  always {
+    status = 4x{{8h00}};                         // initialise outputs to 0
+    test_a = 0;
+    test_b = 0;
+    test_alufn = 0;
+    if (!start)                                  // if not started, set the tester to IDLE state
+      tester_state.d = tester_state.IDLE;
+    
+    state = tester_state.q;                      // connect the fsm state to the output state bits
+    next_status = "NULL";                        // initialise the signal for the next status
+    
+    case (tester_state.q) {    
+      tester_state.IDLE:
+        display_test_timer.d = 0;                // reset the dffs all to 0
+        display_fail_timer.d = 0;
+        tester_ctr.d = 0;
+        
+        next_status = "IDLE";
+        
+        if (start)                               // when input start is set to HIGH (i.e. a switch is flicked), set tester to TEST state
+          tester_state.d = tester_state.TEST;
+      
+      tester_state.TEST:
+        next_status = TEST_NAME[tester_ctr.q];               // set the outputs to the ith test case, where i is the current index stored in tester_ctr
+        test_a = TEST_A[tester_ctr.q];
+        test_b = TEST_B[tester_ctr.q];
+        test_alufn = TEST_ALUFN[tester_ctr.q];
+        
+        if (display_test_timer.q < NUM_TEST_TIMER_CYCLES)    // if the number of CLK cycles elapsed in this test has not met the required number
+          display_test_timer.d = display_test_timer.q + 1;
+        
+        else {
+          display_test_timer.d = 0;                          // CLK cycles reached threshold, so reset the dff counter
+          
+          if (test_c != TEST_C[tester_ctr.q])                // if the output from the module being tested is not the same as the expected value
+            tester_state.d = tester_state.FAIL;              // switch tester to FAIL state
+
+          else if (tester_ctr.q == NUM_TEST_CASES-1) {       // otherwise if the current index is the last one then the tester has finished all tests
+            tester_state.d = tester_state.DONE;              // switch tester to DONE state and reset tester_ctr back to 0
+            tester_ctr.d = 0;
+          }
+            
+          else
+            tester_ctr.d = tester_ctr.q + 1;                 // in this case, current index is not the last one, so increment to the next test case
+        }
+
+      tester_state.FAIL:                                     // just update the next status signal
+        next_status = "FAIL";
+
+      tester_state.DONE:
+        next_status = "DONE";
+    }
+    
+    if (tester_state.q == tester_state.IDLE |
+        tester_state.q == tester_state.TEST | 
+        tester_state.q == tester_state.DONE)
+      status = next_status;                         // if the tester is not in fail mode, just push out the next status
+      
+    else {
+      if (~fail_blink_ctr.q[0])                     // otherwise, we alternate the status between the next status ("FAIL") and the current test to simulate 'blinking''
+        status = next_status;                       // when the LSB is 0, the error is displayed. when the LSB is 1, the test is displayed.
+
+      else
+        status = TEST_NAME[tester_ctr.q];
+      
+      if (display_fail_timer.q < NUM_FAIL_TIMER_CYCLES)      // if the number of CLK cycles elapsed while displaying (by blinking) the error has not met the required number
+	      display_fail_timer.d = display_fail_timer.q + 1;
+
+      else {
+        display_fail_timer.d = 0;                            // the threshold has been met, so reset the dff counter
+              
+        if (~BYPASS_FAIL)                                    // if BYPASS_FAIL is not set to 1, increment blink ctr forever (it will overflow and cycle back to 0 again)
+          fail_blink_ctr.d = fail_blink_ctr.q + 1;           // otherwise we allow the tester to be released back into TEST state when the required number of blinks (when LSB is 0) is met
+        
+        else if (fail_blink_ctr.q < 2*NUM_FAIL_BLINKS-1)     // increment the blink ctr while the number of blinks (when LSB is 0) is less than the required threshold
+          fail_blink_ctr.d = fail_blink_ctr.q + 1;
+        
+        else {
+          fail_blink_ctr.d = 0;                              // reset the counter once the required number is met
+
+          if (tester_ctr.q < NUM_TEST_CASES-1) {             // if the test case index in tester_ctr is not last one, increment it and switch back to TEST state
+            tester_state.d = tester_state.TEST;
+            tester_ctr.d = tester_ctr.q + 1;
+          }
+            
+          else {
+            tester_state.d = tester_state.DONE;              // otherwise it is the last index so switch to DONE state and reset the dff counter
+            tester_ctr.d = 0;
+          }
+        }
+      }
+    }
+  }
+}

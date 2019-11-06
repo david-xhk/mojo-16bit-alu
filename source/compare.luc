@@ -1,0 +1,23 @@
+module compare (
+    input z,         // 1-bit input for zero condition of adder output from doing A-B
+    input v,         // 1-bit input for overflow condition of adder output from doing A-B
+    input n,         // 1-bit input for indicating MSB of adder output from doing A-B
+    input alufn[6],  // 6-bit input for ALUFN opcode
+    output out[16]   // 16-bit output from compare unit
+  ) {
+
+  always {
+    out[15:1] = 15b0;        // set all 15 bits after LSB to 0 
+    
+    case(alufn[2:1]) {       // choose from ALUFN[2:1]
+      b01:                   // if ALUFN[2:1] = 01, do CMPEQ (compare equals to)
+        out[0] = z;
+      b10:                   // if ALUFN[2:1] = 10, do CMPLT (compare less than)
+        out[0] = n ^ v;
+      b11:                   // if ALUFN[2:1] = 11, do CMPLE (compare less than or equals to)
+        out[0] = z | (n^v);
+      default:               // otherwise output 0
+        out[0] = 0;
+    }
+  }
+}

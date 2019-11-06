@@ -1,0 +1,28 @@
+module boolean (
+    input a[16],     // 16-bit input for A
+    input b[16],     // 16-bit input for B
+    input alufn[6],  // 6-bit input for ALUFN opcode
+    output out[16]   // 16-bit output from boolean unit
+  ) {
+
+  always {
+    case (alufn[3:0]) {  // choose from ALUFN[3:0]
+      b1000:             // if ALUFN[3:0] = 1000, do AND (bitwise AND)
+        out = a & b;
+      b0111:             // if ALUFN[3:0] = 0111, do NAND (bitwise NAND)
+        out = ~(a & b);
+      b1110:             // if ALUFN[3:0] = 1110, do OR (bitwise OR)
+        out = a | b;
+      b0001:             // if ALUFN[3:0] = 0001, do NOR (bitwise NOR)
+        out = ~(a | b);
+      b0110:             // if ALUFN[3:0] = 0110, do XOR (bitwise XOR)
+        out = a ^ b;
+      b1010:             // if ALUFN[3:0] = 1010, do Asel (select A)
+        out = a;
+      b1100:             // if ALUFN[3:0] = 1100, do Bsel (select B)
+        out = b;
+      default:           // otherwise output 0
+        out = 0; 
+    }  
+  }
+}

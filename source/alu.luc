@@ -1,0 +1,52 @@
+module alu (
+    input a[16],     // 16-bit input for A
+    input b[16],     // 16-bit input for B
+    input alufn[6],  // 6-bit input for ALUFN opcode
+    
+    output z,         // 1-bit input for zero condition of adder output from doing A-B
+    output v,         // 1-bit input for overflow condition of adder output from doing A-B
+    output n,         // 1-bit input for indicating MSB of adder output from doing A-B
+    output out[16]    // 16-bit output from ALU
+  ) {
+  
+  adder adder;      // initialising adder unit  
+  boolean boolean;  // initialising boolean unit
+  compare compare;  // initialising compare unit
+  shifter shifter;  // initialising shifter unit
+  
+  always {
+    z = adder.z;            // assigning value of adder z output to Z
+    v = adder.v;            // assigning value of adder v output to V     
+    n = adder.n;            // assigning value of adder n output to N
+        
+    adder.a = a;            // assigning respective inputs to adder unit
+    adder.b = b;
+    adder.alufn = alufn;
+    
+    boolean.a = a;          // assigning respective inputs to boolean unit
+    boolean.b = b;
+    boolean.alufn = alufn;
+    
+    shifter.a = a;          // assigning respective inputs to shifter unit
+    shifter.b = b;
+    shifter.alufn = alufn;
+
+    compare.z = adder.z;
+    compare.v = adder.v;    // assigning respective inputs to compare unit
+    compare.n = adder.n;
+    compare.alufn = alufn;
+    
+    out = 0;                // initialise output to 0
+    case(alufn[5:4]) {
+      b00:                  // if ALUFN[5:4] = 00, select adder output
+        out = adder.out; 
+      b01:                  // if ALUFN[5:4] = 01, select boolean output
+        out = boolean.out;
+      b10:                  // if ALUFN[5:4] = 10, select shifter output
+        out = shifter.out;
+      b11:                  // if ALUFN[5:4] = 11, select compare output
+        out = compare.out;
+    }
+  }
+}
+

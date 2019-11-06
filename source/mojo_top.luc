@@ -1,0 +1,484 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    output io_led [3][8],   // LEDs on IO Shield
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8]     // DIP switches on IO Shield
+  ) {
+  
+  sig rst;                  // reset signal
+  sig a[16];                // input and output signals to allow read/write operations down the way
+  sig b[16];
+  sig alufn[6];
+  sig z;
+  sig v;
+  sig n;
+  
+  shifter shifter;          // instantiate the ALU modules which can be individually tested
+  
+  boolean boolean;
+  
+  adder adder;
+  
+  compare compare;
+  
+  alu alu;                  // instantiate the alu module which will be tested with all the test cases combined
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    
+    .rst(rst) {
+      multi_seven_seg multi_seven_seg;                        // instantiate this module to display 4-letter words on the 7-segment displays
+      
+      basic_tester adder_basic_pass(                          // instantiate the basic tester (11 test cases to pass) for adder
+        #NUM_TEST_CASES(11),
+        #TEST_NAME(TestCasesROM.ADDER_TEST_NAME),
+        #TEST_A(TestCasesROM.ADDER_TEST_A),
+        #TEST_B(TestCasesROM.ADDER_TEST_B),
+        #TEST_ALUFN(TestCasesROM.ADDER_TEST_ALUFN),
+        #TEST_C(TestCasesROM.ADDER_TEST_C)
+      );
+      
+      basic_tester adder_basic_fail(                          // instantiate the basic fail tester (5 fail cases) for adder module
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.ADDER_FAIL_NAME),
+        #TEST_A(TestCasesROM.ADDER_FAIL_A),
+        #TEST_B(TestCasesROM.ADDER_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.ADDER_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.ADDER_FAIL_C)
+      );
+      
+      tester adder_fail(                                      // instantiate the second fail tester (same 5 fail cases) for adder module with more detailed errors
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.ADDER_FAIL_NAME),
+        #TEST_A(TestCasesROM.ADDER_FAIL_A),
+        #TEST_B(TestCasesROM.ADDER_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.ADDER_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.ADDER_FAIL_C),
+        #TEST_Z(TestCasesROM.ADDER_FAIL_Z),
+        #TEST_V(TestCasesROM.ADDER_FAIL_V),
+        #TEST_N(TestCasesROM.ADDER_FAIL_N),
+        #INVALID_ALUFN(TestCasesROM.ADDER_INVALID_ALUFN),
+        #BYPASS_FAIL(1)
+      );
+
+      basic_tester compare_basic_pass(                        // instantiate the basic tester (16 test cases to pass) for compare module
+        #NUM_TEST_CASES(16),
+        #TEST_NAME(TestCasesROM.COMPARE_TEST_NAME),
+        #TEST_A(TestCasesROM.COMPARE_TEST_A),
+        #TEST_B(TestCasesROM.COMPARE_TEST_B),
+        #TEST_ALUFN(TestCasesROM.COMPARE_TEST_ALUFN),
+        #TEST_C(TestCasesROM.COMPARE_TEST_C)
+      );
+      
+      basic_tester compare_basic_fail(                        // instantiate the basic fail tester (5 fail cases) for compare module     
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.COMPARE_FAIL_NAME),
+        #TEST_A(TestCasesROM.COMPARE_FAIL_A),
+        #TEST_B(TestCasesROM.COMPARE_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.COMPARE_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.COMPARE_FAIL_C)
+      );
+      
+      tester compare_fail(                                    // instantiate the second fail tester (same 5 fail cases) for compare module with more detailed errors
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.COMPARE_FAIL_NAME),
+        #TEST_A(TestCasesROM.COMPARE_FAIL_A),
+        #TEST_B(TestCasesROM.COMPARE_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.COMPARE_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.COMPARE_FAIL_C),
+        #TEST_Z(TestCasesROM.COMPARE_FAIL_Z),
+        #TEST_V(TestCasesROM.COMPARE_FAIL_V),
+        #TEST_N(TestCasesROM.COMPARE_FAIL_N),
+        #INVALID_ALUFN(TestCasesROM.COMPARE_INVALID_ALUFN),
+        #BYPASS_FAIL(1)
+      );
+      
+      basic_tester boolean_basic_pass(                        // instantiate the basic tester (11 test cases to pass) for boolean module
+        #NUM_TEST_CASES(11),
+        #TEST_NAME(TestCasesROM.BOOLEAN_TEST_NAME),
+        #TEST_A(TestCasesROM.BOOLEAN_TEST_A),
+        #TEST_B(TestCasesROM.BOOLEAN_TEST_B),
+        #TEST_ALUFN(TestCasesROM.BOOLEAN_TEST_ALUFN),
+        #TEST_C(TestCasesROM.BOOLEAN_TEST_C)
+      );
+      
+      basic_tester boolean_basic_fail(                        // instantiate the basic fail tester (5 fail cases) for boolean module 
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.BOOLEAN_FAIL_NAME),
+        #TEST_A(TestCasesROM.BOOLEAN_FAIL_A),
+        #TEST_B(TestCasesROM.BOOLEAN_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.BOOLEAN_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.BOOLEAN_FAIL_C)
+      );
+      
+      tester boolean_fail(                                    // instantiate the second fail tester (same 5 fail cases) for boolean module with more detailed errors
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.BOOLEAN_FAIL_NAME),
+        #TEST_A(TestCasesROM.BOOLEAN_FAIL_A),
+        #TEST_B(TestCasesROM.BOOLEAN_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.BOOLEAN_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.BOOLEAN_FAIL_C),
+        #TEST_Z(TestCasesROM.BOOLEAN_FAIL_Z),
+        #TEST_V(TestCasesROM.BOOLEAN_FAIL_V),
+        #TEST_N(TestCasesROM.BOOLEAN_FAIL_N),
+        #INVALID_ALUFN(TestCasesROM.BOOLEAN_INVALID_ALUFN),
+        #BYPASS_FAIL(1)
+      );
+      
+      basic_tester shifter_basic_pass(                        // instantiate the basic tester (16 test cases to pass) for shifter module
+        #NUM_TEST_CASES(16),
+        #TEST_NAME(TestCasesROM.SHIFTER_TEST_NAME),
+        #TEST_A(TestCasesROM.SHIFTER_TEST_A),
+        #TEST_B(TestCasesROM.SHIFTER_TEST_B),
+        #TEST_ALUFN(TestCasesROM.SHIFTER_TEST_ALUFN),
+        #TEST_C(TestCasesROM.SHIFTER_TEST_C)
+      );
+      
+      basic_tester shifter_basic_fail(                        // instantiate the basic fail tester (5 fail cases) for shifter module 
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.SHIFTER_FAIL_NAME),
+        #TEST_A(TestCasesROM.SHIFTER_FAIL_A),
+        #TEST_B(TestCasesROM.SHIFTER_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.SHIFTER_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.SHIFTER_FAIL_C)
+      );
+      
+      tester shifter_fail(                                    // instantiate the second fail tester (same 5 fail cases) for shifter module with more detailed errors
+        #NUM_TEST_CASES(5),
+        #TEST_NAME(TestCasesROM.SHIFTER_FAIL_NAME),
+        #TEST_A(TestCasesROM.SHIFTER_FAIL_A),
+        #TEST_B(TestCasesROM.SHIFTER_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.SHIFTER_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.SHIFTER_FAIL_C),
+        #TEST_Z(TestCasesROM.SHIFTER_FAIL_Z),
+        #TEST_V(TestCasesROM.SHIFTER_FAIL_V),
+        #TEST_N(TestCasesROM.SHIFTER_FAIL_N),
+        #INVALID_ALUFN(TestCasesROM.SHIFTER_INVALID_ALUFN),
+        #BYPASS_FAIL(1)
+      );
+      
+      basic_tester alu_basic_pass(                            // instantiate the basic tester (all combined 54 test cases to pass) for alu module
+        #NUM_TEST_CASES(54),
+        #TEST_NAME(TestCasesROM.ALU_TEST_NAME),
+        #TEST_A(TestCasesROM.ALU_TEST_A),
+        #TEST_B(TestCasesROM.ALU_TEST_B),
+        #TEST_ALUFN(TestCasesROM.ALU_TEST_ALUFN),
+        #TEST_C(TestCasesROM.ALU_TEST_C)
+      );
+      
+      basic_tester alu_basic_fail(                            // instantiate the basic fail tester (all combined 20 fail cases) for alu module 
+        #NUM_TEST_CASES(20),
+        #TEST_NAME(TestCasesROM.ALU_FAIL_NAME),
+        #TEST_A(TestCasesROM.ALU_FAIL_A),
+        #TEST_B(TestCasesROM.ALU_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.ALU_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.ALU_FAIL_C)
+      );
+      
+      tester alu_fail(                                        // instantiate the second fail tester (same 20 fail cases) for alu module with more detailed errors
+        #NUM_TEST_CASES(20),
+        #TEST_NAME(TestCasesROM.ALU_FAIL_NAME),
+        #TEST_A(TestCasesROM.ALU_FAIL_A),
+        #TEST_B(TestCasesROM.ALU_FAIL_B),
+        #TEST_ALUFN(TestCasesROM.ALU_FAIL_ALUFN),
+        #TEST_C(TestCasesROM.ALU_FAIL_C),
+        #TEST_Z(TestCasesROM.ALU_FAIL_Z),
+        #TEST_V(TestCasesROM.ALU_FAIL_V),
+        #TEST_N(TestCasesROM.ALU_FAIL_N),
+        #INVALID_ALUFN(TestCasesROM.ALU_INVALID_ALUFN),
+        #BYPASS_FAIL(1)
+      );
+    }
+  }
+  
+  always {
+    reset_cond.in = ~rst_n;           // input raw inverted reset signal
+    rst = reset_cond.out;             // conditioned reset
+    led = 8h00;                       // turn LEDs off
+    spi_miso = bz;                    // not using SPI
+    spi_channel = bzzzz;              // not using flags
+    avr_rx = bz;                      // not using serial port
+    io_led = 3x{{8h00}};              // turn LEDs off
+    io_seg = multi_seven_seg.io_seg;  // connect io_seg and io_sel for 7-segment displays to the output of the 7-segment utility module for displaying 4-letter words
+    io_sel = multi_seven_seg.io_sel;
+
+    z = 0;                            // initialise z, v, and n signals to 0
+    v = 0;
+    n = 0;
+    
+    adder_basic_pass.start = 0;       // initialise inputs of adder testers to 0
+    adder_basic_fail.start = 0;
+    adder_fail.start = 0;
+    adder_basic_pass.test_c = 0;
+    adder_basic_fail.test_c = 0;
+    adder_fail.test_c = 0;
+        
+    if (io_dip[0][0]) {                                     // if io_dip[0][0] is on, that is the signal to use the adder's testers
+      io_led[2:1] = {adder.out[15:8], adder.out[7:0]};      // connect the leftmost 16 LEDs on the IO shield to the output of the adder for feedback
+      z = adder.z;                                          // connect z, v, and n signals to the adder's corresponding outputs          
+      v = adder.v;
+      n = adder.n;
+      
+      if (io_dip[0][7:6] == b00) {                          // if neither the 8th nor the 7th switch is on, we will use the basic tester (all pass) for the adder
+        a = adder_basic_pass.test_a;                        // connect a, b, and alufn signals to the basic tester's corresponding outputs
+        b = adder_basic_pass.test_b;
+        alufn = adder_basic_pass.test_alufn;
+        io_led[0][1:0] = adder_basic_pass.state;            // connect the rightmost LEDs to the state output bits of the basic tester for feedback
+        multi_seven_seg.word = adder_basic_pass.status;     // connect the 4-letter status output of the basic tester to the 7-segment utility module
+        adder_basic_pass.start = io_dip[0][0];              // connect the basic tester's start input to io_dip[0][0] to receive the HIGH signal and start the test sequence
+        adder_basic_pass.test_c = adder.out;                // connect the 16-bit output of the adder module to the corresponding input of the basic tester
+      }
+        
+      else if (io_dip[0][6] == 1) {                         // if the 7th switch is on, we will use the second fail tester with more detailed error checking
+        a = adder_fail.test_a;                              // the process here is similar to the above
+        b = adder_fail.test_b;
+        alufn = adder_fail.test_alufn;
+        io_led[0][2:0] = adder_fail.state;                  // just that we connect 3 state bits instead of 2 as there are more fail states in this tester
+        multi_seven_seg.word = adder_fail.status;
+        adder_fail.start = io_dip[0][0];
+        adder_fail.test_c = adder.out;
+      }
+      
+      else {                                                // otherwise, the 8th switch is on, and we will use the basic fail tester only
+        a = adder_basic_fail.test_a;                        // the process is the same as above
+        b = adder_basic_fail.test_b;
+        alufn = adder_basic_fail.test_alufn;
+        io_led[0][1:0] = adder_basic_fail.state;
+        multi_seven_seg.word = adder_basic_fail.status;
+        adder_basic_fail.start = io_dip[0][0];
+        adder_basic_fail.test_c = adder.out;
+      }
+    }
+    
+    compare_basic_pass.start = 0;                           // the process for the following modules is similar to the above, so only extra comments will be made
+    compare_basic_fail.start = 0;
+    compare_fail.start = 0;
+    compare_basic_pass.test_c = 0;
+    compare_basic_fail.test_c = 0;
+    compare_fail.test_c = 0;
+        
+    if (io_dip[0][1]) {
+      io_led[2:1] = {compare.out[15:8], compare.out[7:0]};
+      
+      if (io_dip[0][7:6] == b00) {
+        a = compare_basic_pass.test_a;
+        b = compare_basic_pass.test_b;
+        alufn = compare_basic_pass.test_alufn;
+        io_led[0][1:0] = compare_basic_pass.state;
+        multi_seven_seg.word = compare_basic_pass.status;
+        compare_basic_pass.start = io_dip[0][1];
+        compare_basic_pass.test_c = compare.out;
+      }
+        
+      else if (io_dip[0][6] == 1) {
+        a = compare_fail.test_a;
+        b = compare_fail.test_b;
+        alufn = compare_fail.test_alufn;
+        io_led[0][2:0] = compare_fail.state;
+        multi_seven_seg.word = compare_fail.status;
+        compare_fail.start = io_dip[0][1];
+        compare_fail.test_c = compare.out;
+      }
+      
+      else {
+        a = compare_basic_fail.test_a;
+        b = compare_basic_fail.test_b;
+        alufn = compare_basic_fail.test_alufn;
+        io_led[0][1:0] = compare_basic_fail.state;
+        multi_seven_seg.word = compare_basic_fail.status;
+        compare_basic_fail.start = io_dip[0][1];
+        compare_basic_fail.test_c = compare.out;
+      }
+    }
+    
+    boolean_basic_pass.start = 0;
+    boolean_basic_fail.start = 0;
+    boolean_fail.start = 0;
+    boolean_basic_pass.test_c = 0;
+    boolean_basic_fail.test_c = 0;
+    boolean_fail.test_c = 0;
+        
+    if (io_dip[0][2]) {
+      io_led[2:1] = {boolean.out[15:8], boolean.out[7:0]};
+      
+      if (io_dip[0][7:6] == b00) {
+        a = boolean_basic_pass.test_a;
+        b = boolean_basic_pass.test_b;
+        alufn = boolean_basic_pass.test_alufn;
+        io_led[0][1:0] = boolean_basic_pass.state;
+        multi_seven_seg.word = boolean_basic_pass.status;
+        boolean_basic_pass.start = io_dip[0][2];
+        boolean_basic_pass.test_c = boolean.out;
+      }
+        
+      else if (io_dip[0][6] == 1) {
+        a = boolean_fail.test_a;
+        b = boolean_fail.test_b;
+        alufn = boolean_fail.test_alufn;
+        io_led[0][2:0] = boolean_fail.state;
+        multi_seven_seg.word = boolean_fail.status;
+        boolean_fail.start = io_dip[0][2];
+        boolean_fail.test_c = boolean.out;
+      }
+      
+      else {
+        a = boolean_basic_fail.test_a;
+        b = boolean_basic_fail.test_b;
+        alufn = boolean_basic_fail.test_alufn;
+        io_led[0][1:0] = boolean_basic_fail.state;
+        multi_seven_seg.word = boolean_basic_fail.status;
+        boolean_basic_fail.start = io_dip[0][2];
+        boolean_basic_fail.test_c = boolean.out;
+      }
+    }
+    
+    shifter_basic_pass.start = 0;
+    shifter_basic_fail.start = 0;
+    shifter_fail.start = 0;
+    shifter_basic_pass.test_c = 0;
+    shifter_basic_fail.test_c = 0;
+    shifter_fail.test_c = 0;
+        
+    if (io_dip[0][3]) {
+      io_led[2:1] = {shifter.out[15:8], shifter.out[7:0]};
+      
+      if (io_dip[0][7:6] == b00) {
+        a = shifter_basic_pass.test_a;
+        b = shifter_basic_pass.test_b;
+        alufn = shifter_basic_pass.test_alufn;
+        io_led[0][1:0] = shifter_basic_pass.state;
+        multi_seven_seg.word = shifter_basic_pass.status;
+        shifter_basic_pass.start = io_dip[0][3];
+        shifter_basic_pass.test_c = shifter.out;
+      }
+        
+      else if (io_dip[0][6] == 1) {
+        a = shifter_fail.test_a;
+        b = shifter_fail.test_b;
+        alufn = shifter_fail.test_alufn;
+        io_led[0][2:0] = shifter_fail.state;
+        multi_seven_seg.word = shifter_fail.status;
+        shifter_fail.start = io_dip[0][3];
+        shifter_fail.test_c = shifter.out;
+      }
+      
+      else {
+        a = shifter_basic_fail.test_a;
+        b = shifter_basic_fail.test_b;
+        alufn = shifter_basic_fail.test_alufn;
+        io_led[0][1:0] = shifter_basic_fail.state;
+        multi_seven_seg.word = shifter_basic_fail.status;
+        shifter_basic_fail.start = io_dip[0][3];
+        shifter_basic_fail.test_c = shifter.out;
+      }
+    }
+    
+    alu_basic_pass.start = 0;
+    alu_basic_fail.start = 0;
+    alu_fail.start = 0;
+    alu_basic_pass.test_c = 0;
+    alu_basic_fail.test_c = 0;
+    alu_fail.test_c = 0;
+        
+    if (io_dip[0][4]) {
+      io_led[2:1] = {alu.out[15:8], alu.out[7:0]};
+      z = alu.z;                                            // if the alu is selected, then connect the z, v, and n signals to the alu module outputs instead of the adder
+      v = alu.v;
+      n = alu.n;
+      
+      if (io_dip[0][7:6] == b00) {
+        a = alu_basic_pass.test_a;
+        b = alu_basic_pass.test_b;
+        alufn = alu_basic_pass.test_alufn;
+        io_led[0][1:0] = alu_basic_pass.state;
+        multi_seven_seg.word = alu_basic_pass.status;
+        alu_basic_pass.start = io_dip[0][4];
+        alu_basic_pass.test_c = alu.out;
+      }
+        
+      else if (io_dip[0][6] == 1) {
+        a = alu_fail.test_a;
+        b = alu_fail.test_b;
+        alufn = alu_fail.test_alufn;
+        io_led[0][2:0] = alu_fail.state;
+        multi_seven_seg.word = alu_fail.status;
+        alu_fail.start = io_dip[0][4];
+        alu_fail.test_c = alu.out;
+      }
+      
+      else {
+        a = alu_basic_fail.test_a;
+        b = alu_basic_fail.test_b;
+        alufn = alu_basic_fail.test_alufn;
+        io_led[0][1:0] = alu_basic_fail.state;
+        multi_seven_seg.word = alu_basic_fail.status;
+        alu_basic_fail.start = io_dip[0][4];
+        alu_basic_fail.test_c = alu.out;
+      }
+    }
+    
+    if (io_dip[0][4:0] == 0) {                              // if all 4 selector switches are not switched on, the tester is in select mode, so we display "SEL"
+      a = 0;                                                // set a, b, and alufn signals to 0 and switch off all LEDs
+      b = 0;
+      alufn = 0;
+      io_led[2:1] = 2x{{8b0}};
+      io_led[0][1:0] = b00;
+      multi_seven_seg.word = " SEL";
+    }
+                                                            // this part is about connecting up the inputs and outputs of the actualmodules being tested
+    adder.a = a;
+    adder.b = b;
+    adder.alufn = alufn;
+    adder_fail.test_z = z;                                  // each of the second fail testers require z, v, and n inputs (which should either have been calculated by the adder/ALU or remain as the default 0)
+    adder_fail.test_v = v;
+    adder_fail.test_n = n;
+    
+    compare.z = z;                                          // compare module needs z, v, and n inputs as well
+    compare.v = v;
+    compare.n = n;
+    compare.alufn = alufn;
+    compare_fail.test_z = z;
+    compare_fail.test_v = v;
+    compare_fail.test_n = n;
+    
+    boolean.a = a;
+    boolean.b = b;
+    boolean.alufn = alufn;
+    boolean_fail.test_z = z;
+    boolean_fail.test_v = v;
+    boolean_fail.test_n = n;
+    
+    shifter.a = a;
+    shifter.b = b;
+    shifter.alufn = alufn;
+    shifter_fail.test_z = z;
+    shifter_fail.test_v = v;
+    shifter_fail.test_n = n;
+    
+    alu.a = a;
+    alu.b = b;
+    alu.alufn = alufn;
+    alu_fail.test_z = z;
+    alu_fail.test_v = v;
+    alu_fail.test_n = n;
+    
+    io_led[0][7] = z;                                       // connect LEDs 6, 7, and 8 to z v and n signals for feedback
+    io_led[0][6] = v;
+    io_led[0][5] = n;
+  }
+}

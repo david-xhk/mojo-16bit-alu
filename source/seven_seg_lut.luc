@@ -1,0 +1,73 @@
+module seven_seg_lut (     // lookup table for the 7-segment display, to facilitate the display of 4-letter words used to reflect the status of the tester
+    input char[8],
+    output segs[8]
+  ) {
+  
+  always {
+    case (char) {  // excluded chars: "M", "W"
+      "0": segs = 8b00111111;
+      "1": segs = 8b00000110;
+      "2": segs = 8b01011011;
+      "3": segs = 8b01001111;
+      "4": segs = 8b01100110;
+      "5": segs = 8b01101101;
+      "6": segs = 8b01111101;
+      "7": segs = 8b00000111;
+      "8": segs = 8b01111111;
+      "9": segs = 8b01100111;
+      "a": segs = 8b11011100;
+      "A": segs = 8b01110111;
+      "b": segs = 8b01111100;
+      "B": segs = 8b01111100;
+      "c": segs = 8b01011000;
+      "C": segs = 8b00111001;
+      "d": segs = 8b01011110;
+      "D": segs = 8b01011110;
+      "e": segs = 8b01111001;
+      "E": segs = 8b01111001;
+      "f": segs = 8b01110001;
+      "F": segs = 8b01110001;
+      "g": segs = 8b01101111;
+      "G": segs = 8b01111101;
+      "h": segs = 8b01110100;
+      "H": segs = 8b01110110;
+      "i": segs = 8b00010000;
+      "I": segs = 8b00110000;
+      "j": segs = 8b00001100;
+      "J": segs = 8b00001110;
+      "k": segs = 8b01111000;
+      "K": segs = 8b01111000;
+      "l": segs = 8b00011000;
+      "L": segs = 8b00111000;
+      "n": segs = 8b01010100;
+      "N": segs = 8b00110111;
+      "o": segs = 8b01011100;
+      "O": segs = 8b00111111;
+      "p": segs = 8b01110011;
+      "P": segs = 8b01110011;
+      "q": segs = 8b11100111;
+      "Q": segs = 8b10111111;
+      "r": segs = 8b01010000;
+      "R": segs = 8b00110011;
+      "s": segs = 8b01101101;
+      "S": segs = 8b01101101;
+      "t": segs = 8b01110000;
+      "T": segs = 8b00110001;
+      "u": segs = 8b10011100;
+      "U": segs = 8b10111110;
+      "V": segs = 8b00011100;
+      "V": segs = 8b00111110;
+      "x": segs = 8b01110110;
+      "X": segs = 8b01110110;
+      "y": segs = 8b01101110;
+      "Y": segs = 8b01101110;
+      "z": segs = 8b01011011;
+      "Z": segs = 8b01011011;
+      " ": segs = 8b00000000;
+      "-": segs = 8b01000000;
+      "_": segs = 8b00001000;
+      ".": segs = 8b10000000;
+      default: segs = 8b01111111;      // by default, set all the segments to high to indicate that there was an invalid character being displayed
+    }
+  }
+}
